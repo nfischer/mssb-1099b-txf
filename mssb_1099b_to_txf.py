@@ -47,6 +47,17 @@ row_expr = re.compile(
         r'(?P<proceeds>\$[0-9,.]+)\s+'
         r'(?P<cost>\$[0-9,.]+)\s', re.DOTALL|re.MULTILINE)
 
+
+def formatShareQuantity(quantity):
+    if '.' in quantity:
+        # trim off zeroes to the right of the decimal point.
+        quantity = quantity.strip('0')
+    if quantity[-1] == '.':
+        # If there's nothing to the right of the decimal point, remove it
+        quantity = quantity[0:-1]
+    return quantity
+
+
 def parseAndSerializeRows(text, entry_code):
     output_rows = []
     for match in row_expr.finditer(text):
@@ -54,9 +65,12 @@ def parseAndSerializeRows(text, entry_code):
         output_rows.append('N' + entry_code)
         output_rows.append('C1')
         output_rows.append('L1')
+
         # Form 8949 documents "100 sh. XYZ Co." as the example format.
-        output_rows.append('P' + match.group('quantity') +
+        quantity = formatShareQuantity(match.group('quantity'))
+        output_rows.append('P' + quantity +
                            ' sh. of ' + match.group('descr'))
+
         output_rows.append('D' + match.group('acquired'))
         output_rows.append('D' + match.group('sold'))
         # These have a leading dollar sign.
